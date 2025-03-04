@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>강아지 🐶 vs 고양이 🐱 분류기</title>
+  <!-- 부트스트랩 CSS -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
+        integrity="sha384-+YQ4/0rZl0vNPclz9ZCE3D5veuT5M/tHRE7fWd5R3Y1gKsCTbGU5ZaFuk1pP2xgq"
+        crossorigin="anonymous">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin-top: 50px;
+      text-align: center;
+    }
+    .preview-container {
+      max-width: 400px;
+      margin: 20px auto 0; /* 가운데 정렬 & 위쪽 여백 */
+    }
+    #image-preview {
+      display: none;
+      width: 100%;
+      height: auto;
+      margin: 0 auto;
+      border-radius: 4px;
+      border: 1px solid #dee2e6;
+    }
+    .card {
+      margin-top: 20px;
+      text-align: center;
+      padding: 15px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+    }
+    .btn-upload {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2 class="mb-4">강아지 🐶 vs 고양이 🐱 분류기</h2>
+    
+    <!-- 업로드 폼 (부트스트랩 폼 그룹) -->
+    <form id="upload-form" class="form-inline d-flex justify-content-center">
+      <div class="form-group mb-2">
+        <input type="file" id="image-input" accept="image/*" class="form-control-file">
+      </div>
+      <button type="submit" class="btn btn-primary ml-2 mb-2 btn-upload">예측하기</button>
+    </form>
+
+    <!-- 이미지 미리보기 카드 영역 -->
+    <div class="preview-container">
+      <div id="preview-card" class="card" style="display: none;">
+        <img id="image-preview" src="" alt="Uploaded Image">
+      </div>
+    </div>
+  </div>
+
+  <!-- 부트스트랩 JS (의존성: jQuery, Popper.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"
+          integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+          crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc5Sd5VoX1z1rZ75fHP8+8Ac1C8tcsC2fAP6IMR9D"
+          crossorigin="anonymous"></script>
+
+  <script>
+    document.getElementById("upload-form").addEventListener("submit", function(event) {
+      event.preventDefault(); // 페이지 새로고침 방지
+
+      const input = document.getElementById("image-input");
+      if (!input.files || !input.files.length) {
+        alert("이미지를 선택하세요!");
+        return;
+      }
+
+      const file = input.files[0];
+      const formData = new FormData();
+      formData.append("image", file);
+
+      // 이미지 미리보기 설정
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const imgPreview = document.getElementById("image-preview");
+        imgPreview.src = e.target.result;
+        document.getElementById("preview-card").style.display = "block";
+        imgPreview.style.display = "block"; // 미리보기 표시
+      };
+      reader.readAsDataURL(file);
+
+      // Flask 서버로 이미지 업로드 요청
+      fetch("http://127.0.0.1:5555/predict", {
+        method: "POST",
+        body: formData
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log("서버 응답:", data);
+        // 결과를 alert로 띄움
+        alert(`Prediction: ${data.prediction}\nProbability: ${(data.probability * 100).toFixed(2)}%`);
+      })
+      .catch(error => {
+        console.error("예측 오류:", error);
+        alert("예측 실패!");
+      });
+    });
+  </script>
+</body>
+</html>
